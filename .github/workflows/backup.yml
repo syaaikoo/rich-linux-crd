@@ -1,4 +1,4 @@
-name: Backup Cinnamon
+name: Cinnamon in github actions
 
 on:
   workflow_dispatch:
