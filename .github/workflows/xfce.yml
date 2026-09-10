@@ -1,4 +1,4 @@
-name: RICH LINUX (Cinnamon + Chrome Remote Desktop)
+name: RICH LINUX (XFCE BETA + Chrome Remote Desktop)
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 360
 
     steps:
@@ -25,9 +25,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/apt-archives
-          key: apt-ubuntu-2404-${{ steps.dated.outputs.today }}
+          key: apt-ubuntu-2604-${{ steps.dated.outputs.today }}
           restore-keys: |
-            apt-ubuntu-2404-
+            apt-ubuntu-2604-
           save-always: true
 
       # ============================================================
@@ -44,6 +44,12 @@ jobs:
           echo "------------------------------------------------------------"
           echo -e "${C_CYAN}[STEP 01/17] PREPARE SYSTEM${C_NC}"
           echo "------------------------------------------------------------"
+          echo "=============================================================="
+          echo -e "${C_RED}  [BETA] XFCE workflow - runner image ubuntu-26.04 (PUBLIC PREVIEW)${C_NC}"
+          echo -e "${C_YELLOW}  Image preview: bisa ada tool/versi beda atau tidak stabil;${C_NC}"
+          echo -e "${C_YELLOW}  possible queueing; /dev/kvm BELUM terverifikasi di image ini${C_NC}"
+          echo -e "${C_YELLOW}  (warn-only, bukan gagal). Tujuan: DE paling ringan & cepat.${C_NC}"
+          echo "=============================================================="
 
           __prepare_start=$(date +%s)
 
@@ -123,19 +129,19 @@ jobs:
 
 
       # ============================================================
-      # INSTALL CINNAMON DESKTOP (FULL)
+      # INSTALL XFCE DESKTOP (BETA)
       # ============================================================
-      - name: Install Cinnamon Desktop
+      - name: Install XFCE Desktop
         run: |
-          C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_NC='\033[0m'
+          C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_RED='\033[1;31m'; C_NC='\033[0m'
 
           echo ""
           echo "------------------------------------------------------------"
-          echo -e "${C_CYAN}[STEP 02/17] INSTALL CINNAMON DESKTOP (FULL)${C_NC}"
+          echo -e "${C_CYAN}[STEP 02/17] INSTALL XFCE DESKTOP (BETA)${C_NC}"
           echo "------------------------------------------------------------"
 
-          echo -e "${C_YELLOW}[INFO] Installing full Cinnamon desktop environment...${C_NC}"
-          echo -e "${C_YELLOW}[INFO] This downloads approx 1GB, please wait...${C_NC}"
+          echo -e "${C_YELLOW}[INFO] Installing XFCE desktop environment (ringan & cepat)...${C_NC}"
+          echo -e "${C_YELLOW}[INFO] Tujuan: DE paling ringan di keluarga RICH Linux.${C_NC}"
 
           # Slim font: metapackage fonts-noto merekomendasikan font raksasa
           # (fonts-noto-cjk 61MB, cjk-extra 145MB, extra 78.5MB) yang tidak
@@ -149,10 +155,10 @@ jobs:
           PREFE
 
           # Blokir snapd + deb transisi (thunderbird/firefox -> snap). Ketiganya
-          # hanya Recommends (bukan Depends) dari cinnamon-desktop-environment,
-          # jadi aman di-skip. thunderbird transisi memaksa 'snap install
-          # thunderbird' + retry 30 menit ke store saat postinst (hang lama di
-          # runner). Pin dihapus lagi setelah install agar operasi apt lain normal.
+          # hanya Recommends (bukan Depends) dari xfce4, jadi aman di-skip.
+          # thunderbird transisi memaksa 'snap install thunderbird' + retry
+          # 30 menit ke store saat postinst (hang lama di runner). Pin dihapus
+          # lagi setelah install agar operasi apt lain normal.
           sudo tee /etc/apt/preferences.d/99-no-snap.pref > /dev/null <<'PREFE'
           Package: snapd thunderbird firefox
           Pin: version *
@@ -163,9 +169,13 @@ jobs:
             -o Dpkg::Options::="--force-confdef" \
             -o Dpkg::Options::="--force-confold" \
             -o Dpkg::Use-Pty=0 \
-            cinnamon-desktop-environment \
-            cinnamon \
-            cinnamon-session \
+            xfce4 \
+            xfce4-session \
+            xfwm4 \
+            xfce4-terminal \
+            xfce4-power-manager \
+            thunar \
+            xfdesktop4 \
             dbus-x11 \
             dbus-user-session \
             policykit-1 \
@@ -175,11 +185,9 @@ jobs:
             mesa-utils \
             libgl1-mesa-dri \
             libglx-mesa0 \
+            gtk2-engines-pixbuf \
             adwaita-icon-theme \
             fonts-cantarell \
-            nemo \
-            obs-studio \
-            gnome-terminal \
             qemu-system-x86 \
             qemu-utils \
             libvirt-daemon-system \
@@ -202,19 +210,19 @@ jobs:
           echo -e "${C_GREEN}[OK] Heavy Noto fonts (cjk / cjk-extra / extra) skipped (~285MB saved).${C_NC}"
 
           echo "------------------------------------------------------------"
-          echo -e "${C_YELLOW}[INFO] Verifying Cinnamon binaries (fail-fast)...${C_NC}"
-          command -v cinnamon || { echo -e "${C_RED}[FAIL] binary 'cinnamon' not found after install.${C_NC}"; exit 1; }
-          test -x /usr/bin/cinnamon-session || { echo -e "${C_RED}[FAIL] /usr/bin/cinnamon-session not found.${C_NC}"; exit 1; }
-          cinnamon --version
-          muffin --version || true
-          nemo --version || true
-          ls /usr/share/xsessions/cinnamon.desktop || true
-          grep "^Exec=" /usr/share/xsessions/cinnamon.desktop || true
-          which cinnamon-session || true
-          ls /usr/share/cinnamon-session/sessions/ || true
+          echo -e "${C_YELLOW}[INFO] Verifying XFCE binaries (fail-fast)...${C_NC}"
+          command -v xfce4-session || { echo -e "${C_RED}[FAIL] binary 'xfce4-session' not found after install.${C_NC}"; exit 1; }
+          test -x /usr/bin/xfce4-session || { echo -e "${C_RED}[FAIL] /usr/bin/xfce4-session not found.${C_NC}"; exit 1; }
+          command -v xfwm4 || { echo -e "${C_RED}[FAIL] binary 'xfwm4' (WM) not found. Cek STEP 02.${C_NC}"; exit 1; }
+          xfce4-session --version || true
+          xfwm4 --version || true
+          thunar --version || true
+          ls /usr/share/xsessions/xfce.desktop || true
+          grep "^Exec=" /usr/share/xsessions/xfce.desktop || true
+          which xfce4-session || true
           echo "------------------------------------------------------------"
 
-          echo -e "${C_GREEN}[OK] Cinnamon desktop installed: $(cinnamon --version 2>/dev/null || echo 'version check skipped')${C_NC}"
+          echo -e "${C_GREEN}[OK] XFCE desktop installed: $(xfce4-session --version 2>/dev/null | head -n1 || echo 'version check skipped')${C_NC}"
 
 
       # ============================================================
@@ -311,7 +319,7 @@ jobs:
           export PATH="$HOME/.opencode/bin:$PATH"
 
           # Salin system-wide agar tersedia untuk root + runner +
-          # terminal Cinnamon via CRD (yang tidak selalu load ~/.bashrc baru).
+          # terminal XFCE via CRD (yang tidak selalu load ~/.bashrc baru).
           sudo cp "$HOME/.opencode/bin/opencode" /usr/local/bin/opencode || true
           sudo chmod +x /usr/local/bin/opencode || true
 
@@ -395,34 +403,32 @@ jobs:
           sudo chown -R runner:runner /home/runner/apt-archives || true
 
       # ============================================================
-      # CONFIGURE CINNAMON SESSION (CRD HEADLESS, NO LIGHTDM, NO XSESSION WRAPPER)
+      # CONFIGURE XFCE SESSION (CRD HEADLESS, NO LIGHTDM, NO XSESSION WRAPPER)
       # Pelajaran dari error:
-      #   "Xsession: unable to launch cinnamon-session-cinnamon ... not found"
+      #   "Xsession: unable to launch <session> ... not found"
       # /etc/X11/Xsession gagal me-resolve nama session di environment
       # runtime CRD -> panggil binary via absolute path langsung.
-      # Pola terbukti di Ubuntu 24.04 (xrdp/Hyper-V): exec cinnamon-session.
       # ============================================================
-      - name: Configure CRD Cinnamon Session
+      - name: Configure CRD XFCE Session
         run: |
           C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_RED='\033[1;31m'; C_NC='\033[0m'
 
           echo ""
           echo "------------------------------------------------------------"
-          echo -e "${C_CYAN}[STEP 08/17] CONFIGURE CINNAMON SESSION${C_NC}"
+          echo -e "${C_CYAN}[STEP 08/17] CONFIGURE XFCE SESSION${C_NC}"
           echo "------------------------------------------------------------"
 
-          echo -e "${C_YELLOW}[INFO] Detecting available Cinnamon session...${C_NC}"
-          ls /usr/share/xsessions/cinnamon*.desktop || true
-          grep -h "^Exec=" /usr/share/xsessions/cinnamon*.desktop || true
-          ls -l /usr/bin/cinnamon-session* || true
-          ls /usr/share/cinnamon-session/sessions/ || true
-          echo -e "${C_YELLOW}[INFO] Diagnostik wrapper Mint (jika ada):${C_NC}"
-          cat /usr/bin/cinnamon-session-cinnamon 2>/dev/null || echo "[INFO] no cinnamon-session-cinnamon wrapper"
+          echo -e "${C_YELLOW}[INFO] Detecting available XFCE session...${C_NC}"
+          ls /usr/share/xsessions/xfce*.desktop || true
+          grep -h "^Exec=" /usr/share/xsessions/xfce*.desktop || true
+          ls -l /usr/bin/xfce4-session || true
+          echo -e "${C_YELLOW}[INFO] Diagnostik wrapper Xsession (jika ada):${C_NC}"
+          cat /usr/bin/xfce4-session 2>/dev/null | head -5 || echo "[INFO] /usr/bin/xfce4-session adalah binary asli"
 
           echo -e "${C_YELLOW}[INFO] Fail-fast: binary wajib harus ada...${C_NC}"
-          test -x /usr/bin/cinnamon-session || { echo -e "${C_RED}[FAIL] /usr/bin/cinnamon-session missing.${C_NC}"; exit 1; }
-          command -v cinnamon || { echo -e "${C_RED}[FAIL] binary 'cinnamon' (WM) missing. Cek STEP 02.${C_NC}"; exit 1; }
-          test -f /usr/share/cinnamon-session/sessions/cinnamon.session || { echo -e "${C_RED}[FAIL] cinnamon.session missing.${C_NC}"; exit 1; }
+          test -x /usr/bin/xfce4-session || { echo -e "${C_RED}[FAIL] /usr/bin/xfce4-session missing.${C_NC}"; exit 1; }
+          command -v xfwm4 || { echo -e "${C_RED}[FAIL] binary 'xfwm4' (WM) missing. Cek STEP 02.${C_NC}"; exit 1; }
+          test -f /usr/share/xsessions/xfce.desktop || { echo -e "${C_RED}[FAIL] xfce.desktop session missing.${C_NC}"; exit 1; }
 
           RUNNER_UID=$(id -u runner)
           echo -e "${C_YELLOW}[INFO] runner UID=$RUNNER_UID${C_NC}"
@@ -462,11 +468,15 @@ jobs:
           sudo -u runner tee /home/runner/.chrome-remote-desktop-session > /dev/null <<EOF
           export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           export NEEDRESTART_MODE=l
-          DESKTOP_SESSION=cinnamon
-          XDG_CURRENT_DESKTOP=X-Cinnamon
+          DESKTOP_SESSION=xfce
+          XDG_CURRENT_DESKTOP=XFCE
           XDG_SESSION_TYPE=x11
           XDG_RUNTIME_DIR=/run/user/$RUNNER_UID
           LIBGL_ALWAYS_SOFTWARE=1
+
+          # No screensaver/lock (headless CRD)
+          xset s off 2>/dev/null || true
+          xset -dpms 2>/dev/null || true
 
           # Auto-detect display and set 1600x1200 resolution.
           # CRD selalu start Xorg di display >= 20 (FIRST_X_DISPLAY_NUMBER=20) dan
@@ -494,7 +504,7 @@ jobs:
             xrandr --display "\$DISP" --output "\$OUTPUT" --mode "\$MODE" 2>/dev/null || true
           fi
 
-          exec /usr/bin/cinnamon-session --session cinnamon
+          exec /usr/bin/xfce4-session
           EOF
 
           sudo chown runner:runner \
@@ -503,10 +513,10 @@ jobs:
           sudo chmod +x \
             /home/runner/.chrome-remote-desktop-session
 
-          echo -e "${C_YELLOW}[INFO] Creating autostart fallback (set-resolution.sh re-apply 1600x1200 after Muffin start)...${C_NC}"
+          echo -e "${C_YELLOW}[INFO] Creating autostart fallback (set-resolution.sh re-apply 1600x1200 after xfwm4 start)...${C_NC}"
           sudo tee /usr/local/bin/set-resolution.sh > /dev/null <<'SHRES'
           #!/bin/bash
-          # Fallback: re-apply 1600x1200 setelah desktop start (Muffin bisa reset mode).
+          # Fallback: re-apply 1600x1200 setelah desktop start (xfwm4 bisa reset mode).
           WANT=1600x1200
           sleep 4
           for try in 1 2 3 4 5 6; do
@@ -541,7 +551,7 @@ jobs:
             exit 1
           fi
 
-          echo -e "${C_GREEN}[OK] Cinnamon session configured for CRD.${C_NC}"
+          echo -e "${C_GREEN}[OK] XFCE session configured for CRD.${C_NC}"
 
 
       # ============================================================
@@ -556,22 +566,36 @@ jobs:
           echo -e "${C_CYAN}[STEP 09/17] DISABLE SCREENSAVER AND LOCK${C_NC}"
           echo "------------------------------------------------------------"
 
-          echo -e "${C_YELLOW}[INFO] Disabling Cinnamon screensaver persistently (no dbus-launch)...${C_NC}"
-          echo -e "${C_YELLOW}[INFO] NOTE: jangan apt-get remove cinnamon-screensaver - itu ikut mencopot paket 'cinnamon' (dependency). Disable saja.${C_NC}"
-          # Non-destruktif: cegah autostart screensaver agar tidak mengunci session CRD headless.
-          # (Paketnya tetap terinstall supaya dependency 'cinnamon' tidak ikut terhapus.)
-          sudo rm -f /etc/xdg/autostart/cinnamon-screensaver.desktop || true
+          echo -e "${C_YELLOW}[INFO] Disabling XFCE screensaver/lock persistently (xfconf + xset)...${C_NC}"
+          # XFCE memakai xfconf (bukan dconf). Screensaver/locker adalah
+          # Recommends (xfce4-screensaver / light-locker / xscreensaver) -
+          # aman dihapus karena bukan dependency xfce4-session.
+          sudo apt-get purge -y xfce4-screensaver light-locker xscreensaver 2>/dev/null || true
+          sudo rm -f /etc/xdg/autostart/xfce4-screensaver.desktop /etc/xdg/autostart/light-locker.desktop || true
           sudo -u runner mkdir -p /home/runner/.config/autostart || true
-          sudo -u runner bash -c 'echo "Hidden=true" > /home/runner/.config/autostart/cinnamon-screensaver.desktop' || true
-          # Default dconf system-wide: no idle, no lock
-          sudo mkdir -p /etc/dconf/db/local.d || true
-          echo -e "[org/cinnamon/desktop/session]\nidle-delay=0\n[org/cinnamon/desktop/screensaver]\nlock-enabled=false\nidle-activation-enabled=false\n[org/gnome/desktop/session]\nidle-delay=0" | sudo tee /etc/dconf/db/local.d/99-crd-no-lock > /dev/null || true
-          sudo dconf update || true
+          sudo -u runner bash -c 'echo "Hidden=true" > /home/runner/.config/autostart/xfce4-screensaver.desktop' || true
+          # xset off dpms dijalankan di session file (STEP 08) + fallback autostart
+          sudo -u runner bash -c 'cat > /home/runner/.config/autostart/no-lock.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=Disable Screen Blanking
+          Exec=sh -c "xset s off; xset -dpms"
+          X-GNOME-Autostart-enabled=true
+          Terminal=false
+          EOF'
+          # Power manager: no blanking/suspend di AC & battery
+          if command -v xfconf-query >/dev/null 2>&1; then
+            DISPLAY=:20 DBUS_SESSION_BUS_ADDRESS=/dev/null \
+              xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/blank-on-ac -s 0 2>/dev/null || \
+              dbus-run-session -- xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/blank-on-ac -s 0 2>/dev/null || true
+            dbus-run-session -- xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/dpms-enabled -s false 2>/dev/null || true
+            dbus-run-session -- xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/lock-screen-suspend-hibernate -s false 2>/dev/null || true
+          fi
           sudo chown -R runner:runner /home/runner/.config || true
 
-          echo -e "${C_YELLOW}[INFO] Guard: pastikan paket 'cinnamon' masih utuh setelah disable...${C_NC}"
-          command -v cinnamon || { echo -e "${C_RED}[FAIL] binary 'cinnamon' hilang setelah STEP 10!${C_NC}"; exit 1; }
-          test -x /usr/bin/cinnamon-session || { echo -e "${C_RED}[FAIL] /usr/bin/cinnamon-session hilang setelah STEP 10!${C_NC}"; exit 1; }
+          echo -e "${C_YELLOW}[INFO] Guard: pastikan paket XFCE masih utuh setelah disable...${C_NC}"
+          command -v xfce4-session || { echo -e "${C_RED}[FAIL] binary 'xfce4-session' hilang setelah STEP 10!${C_NC}"; exit 1; }
+          command -v xfwm4 || { echo -e "${C_RED}[FAIL] binary 'xfwm4' hilang setelah STEP 10!${C_NC}"; exit 1; }
 
           echo -e "${C_GREEN}[OK] Screensaver and lock disabled.${C_NC}"
 
@@ -612,7 +636,7 @@ jobs:
       # ============================================================
       # INSTALL CATPPUCCIN THEME & ZAFIRO ICONS
       # Extract cinnamon-theme.zip → /usr/share/themes + /usr/share/icons
-      # Apply via dconf system-wide + per-user fallback + autostart
+      # Apply via xfconf (GTK theme, icon theme, xfwm4 theme) + autostart
       # ============================================================
       - name: Install Catppuccin Theme & Zafiro Icons
         run: |
@@ -638,22 +662,10 @@ jobs:
           ls /usr/share/themes/Catppuccin-B-LB-Dark/index.theme || true
           ls /usr/share/icons/Zafiro-Nord-Black/index.theme || true
 
-          echo -e "${C_YELLOW}[INFO] Applying theme via dconf system-wide...${C_NC}"
-          sudo mkdir -p /etc/dconf/db/local.d
-          sudo tee /etc/dconf/db/local.d/01-theme > /dev/null <<'DCONFEOF'
-          [org/cinnamon/desktop/interface]
-          gtk-theme='Catppuccin-B-LB-Dark'
-          icon-theme='Zafiro-Nord-Black'
-
-          [org/cinnamon/theme]
-          name='Catppuccin-B-LB-Dark'
-          DCONFEOF
-          sudo dconf update || true
-
-          echo -e "${C_YELLOW}[INFO] Applying theme per-user (fallback via dbus-run-session)...${C_NC}"
-          sudo -u runner dbus-run-session -- gsettings set org.cinnamon.desktop.interface gtk-theme 'Catppuccin-B-LB-Dark' || true
-          sudo -u runner dbus-run-session -- gsettings set org.cinnamon.desktop.interface icon-theme 'Zafiro-Nord-Black' || true
-          sudo -u runner dbus-run-session -- gsettings set org.cinnamon.theme name 'Catppuccin-B-LB-Dark' || true
+          echo -e "${C_YELLOW}[INFO] Applying theme via xfconf (per-user fallback via dbus-run-session)...${C_NC}"
+          sudo -u runner dbus-run-session -- xfconf-query -c xsettings -p /Net/ThemeName -s 'Catppuccin-B-LB-Dark' || true
+          sudo -u runner dbus-run-session -- xfconf-query -c xsettings -p /Net/IconThemeName -s 'Zafiro-Nord-Black' || true
+          sudo -u runner dbus-run-session -- xfconf-query -c xfwm4 -p /general/theme -s 'Catppuccin-B-LB-Dark' || true
 
           echo -e "${C_YELLOW}[INFO] Creating autostart fallback for theme persistence...${C_NC}"
           sudo -u runner mkdir -p /home/runner/.config/autostart
@@ -661,7 +673,7 @@ jobs:
           [Desktop Entry]
           Type=Application
           Name=Set Theme
-          Exec=sh -c "sleep 3; gsettings set org.cinnamon.desktop.interface gtk-theme \"Catppuccin-B-LB-Dark\"; gsettings set org.cinnamon.desktop.interface icon-theme \"Zafiro-Nord-Black\"; gsettings set org.cinnamon.theme name \"Catppuccin-B-LB-Dark\""
+          Exec=sh -c "sleep 3; xfconf-query -c xsettings -p /Net/ThemeName -s \"Catppuccin-B-LB-Dark\"; xfconf-query -c xsettings -p /Net/IconThemeName -s \"Zafiro-Nord-Black\"; xfconf-query -c xfwm4 -p /general/theme -s \"Catppuccin-B-LB-Dark\""
           X-GNOME-Autostart-enabled=true
           Terminal=false
           EOF'
@@ -670,7 +682,7 @@ jobs:
           ls -d /usr/share/themes/Catppuccin-B-LB-Dark/ || true
           ls -d /usr/share/icons/Zafiro-Nord-Black/ || true
           echo "------------------------------------------------------------"
-          echo -e "${C_GREEN}[OK] Catppuccin-B-LB-Dark theme + Zafiro-Nord-Black icons installed.${C_NC}"
+          echo -e "${C_GREEN}[OK] Catppuccin-B-LB-Dark theme + Zafiro-Nord-Black icons installed (XFCE via xfconf).${C_NC}"
 
 
       # ============================================================
@@ -692,20 +704,27 @@ jobs:
             || { echo -e "${C_RED}[FAIL] Gagal mengunduh wallpaper.${C_NC}"; exit 1; }
           sudo chown runner:runner /home/runner/Pictures/wallpaper.png
 
-          echo -e "${C_YELLOW}[INFO] Setting wallpaper via gsettings (Cinnamon schema)...${C_NC}"
-          # dbus-run-session menyediakan session dbus sementara agar gsettings
-          # menulis ke dconf user 'runner', yang dipakai saat CRD session menyala.
-          sudo -u runner dbus-run-session -- gsettings set org.cinnamon.desktop.background picture-uri "file:///home/runner/Pictures/wallpaper.png" || true
-          sudo -u runner dbus-run-session -- gsettings set org.cinnamon.desktop.background picture-options "zoom" || true
+          echo -e "${C_YELLOW}[INFO] Setting wallpaper via xfconf (xfce4-desktop backdrop)...${C_NC}"
+          # dbus-run-session menyediakan session dbus sementara agar xfconf
+          # menulis ke config user 'runner'. Nama monitor bisa berbeda
+          # (DUMMY0/monitor0) -> set untuk beberapa kandidat + fallback '*'.
+          WALL="file:///home/runner/Pictures/wallpaper.png"
+          for MON in monitor0 monitorDUMMY0 DUMMY0 eDP-1 HDMI-1; do
+            for WS in 0 1 2 3; do
+              sudo -u runner dbus-run-session -- xfconf-query -c xfce4-desktop -p "/backdrop/screen0/${MON}/workspace${WS}/last-image" -s "$WALL" 2>/dev/null || true
+              sudo -u runner dbus-run-session -- xfconf-query -c xfce4-desktop -p "/backdrop/screen0/${MON}/workspace${WS}/image-style" -s 5 2>/dev/null || true
+            done
+          done
+          sudo -u runner dbus-run-session -- xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor0/workspace0/last-image" -s "$WALL" 2>/dev/null || true
 
           # Fallback autostart: set ulang wallpaper saat session mulai,
-          # meng-cover kasus dconf belum tercatat sebelum desktop jalan.
+          # meng-cover kasus config belum tercatat sebelum desktop jalan.
           sudo -u runner mkdir -p /home/runner/.config/autostart
           sudo -u runner bash -c 'cat > /home/runner/.config/autostart/set-wallpaper.desktop <<EOF
           [Desktop Entry]
           Type=Application
           Name=Set Wallpaper
-          Exec=sh -c "sleep 3; gsettings set org.cinnamon.desktop.background picture-uri file:///home/runner/Pictures/wallpaper.png; gsettings set org.cinnamon.desktop.background picture-options zoom"
+          Exec=sh -c "sleep 3; for m in monitor0 monitorDUMMY0 DUMMY0; do xfconf-query -c xfce4-desktop -p /backdrop/screen0/\$m/workspace0/last-image -s file:///home/runner/Pictures/wallpaper.png 2>/dev/null; done"
           X-GNOME-Autostart-enabled=true
           Terminal=false
           EOF'
@@ -795,10 +814,10 @@ jobs:
           fi
           echo -e "${C_YELLOW}[INFO] CRD command valid ($(printf '%s' "$CRD_COMMAND_CLEAN" | wc -c) chars, contains start-host).${C_NC}"
 
-          # Ganti nama perangkat CRD agar tampil sebagai "cinnamon" (bukan hostname runner).
+          # Ganti nama perangkat CRD agar tampil sebagai "xfce" (bukan hostname runner).
           CRD_COMMAND_CLEAN="$(printf '%s' "$CRD_COMMAND_CLEAN" | sed -E 's/--name=[^ ]*//')"
-          CRD_COMMAND_CLEAN="$CRD_COMMAND_CLEAN --name=\"cinnamon\""
-          echo -e "${C_YELLOW}[INFO] CRD device name di-override menjadi 'cinnamon'.${C_NC}"
+          CRD_COMMAND_CLEAN="$CRD_COMMAND_CLEAN --name=\"xfce\""
+          echo -e "${C_YELLOW}[INFO] CRD device name di-override menjadi 'xfce'.${C_NC}"
 
           echo -e "${C_YELLOW}[INFO] Registering host as user 'runner' (retry 3x jika OAuth transien)...${C_NC}"
 
@@ -840,11 +859,11 @@ jobs:
           echo "=============================================================="
           echo -e "      [INFO] Access    : https://remotedesktop.google.com/access"
           echo -e "      [INFO] User      : runner"
-          echo -e "      [INFO] Desktop   : Cinnamon"
+          echo -e "      [INFO] Desktop   : XFCE (Beta)"
           echo -e "      [INFO] PIN       : default 123456 (or custom via secret CRD_PIN)"
           echo "=============================================================="
           echo ""
-          echo "::notice::CRD ready (Cinnamon) - connect via https://remotedesktop.google.com/access as user runner"
+          echo "::notice::CRD ready (XFCE BETA) - connect via https://remotedesktop.google.com/access as user runner"
 
 
       # ============================================================
@@ -863,17 +882,16 @@ jobs:
           uname -a
           echo "::endgroup::"
 
-          echo "::group::[CHECK] Cinnamon"
-          echo -e "[ASSERT] binary 'cinnamon' (WM) wajib ada..."
-          command -v cinnamon || { echo "[FAIL] binary 'cinnamon' missing!"; exit 1; }
-          cinnamon --version
-          muffin --version || true
-          nemo --version || true
-          ls /usr/share/xsessions/cinnamon.desktop || true
-          grep "^Exec=" /usr/share/xsessions/cinnamon.desktop || true
-          ls -l /usr/bin/cinnamon-session || true
-          test -f /usr/share/cinnamon-session/sessions/cinnamon.session || { echo "[FAIL] cinnamon.session missing!"; exit 1; }
-          ls /usr/share/cinnamon-session/sessions/ || true
+          echo "::group::[CHECK] XFCE"
+          echo -e "[ASSERT] binary 'xfce4-session' (session) wajib ada..."
+          command -v xfce4-session || { echo "[FAIL] binary 'xfce4-session' missing!"; exit 1; }
+          xfce4-session --version || true
+          command -v xfwm4 || { echo "[FAIL] binary 'xfwm4' missing!"; exit 1; }
+          xfwm4 --version || true
+          thunar --version || true
+          ls /usr/share/xsessions/xfce.desktop || true
+          grep "^Exec=" /usr/share/xsessions/xfce.desktop || true
+          ls -l /usr/bin/xfce4-session || true
           echo "--- session file ---"
           cat /home/runner/.chrome-remote-desktop-session || true
           echo "--- session file (cat -A, cek spasi liar) ---"
@@ -881,7 +899,7 @@ jobs:
           ls -l /home/runner/.chrome-remote-desktop-session || true
           echo "--- no Xsession/lightdm wrapper allowed ---"
           grep -r "Xsession\|lightdm" /home/runner/.chrome-remote-desktop-session && echo "[FAIL] session file masih pakai wrapper!" && exit 1 || echo "[OK] session file direct exec, bersih"
-          grep -q "exec /usr/bin/cinnamon-session --session cinnamon" /home/runner/.chrome-remote-desktop-session || { echo "[FAIL] exec line tidak sesuai harapan!"; exit 1; }
+          grep -q "exec /usr/bin/xfce4-session" /home/runner/.chrome-remote-desktop-session || { echo "[FAIL] exec line tidak sesuai harapan!"; exit 1; }
           echo "::endgroup::"
 
           echo "::group::[CHECK] Google Chrome"
@@ -909,7 +927,9 @@ jobs:
           ls /usr/share/themes/Catppuccin-B-LB-Dark/index.theme || true
           ls -d /usr/share/icons/Zafiro-Nord-Black/ || true
           ls /usr/share/icons/Zafiro-Nord-Black/index.theme || true
-          cat /etc/dconf/db/local.d/01-theme || true
+          echo "--- xfconf theme values (jika ter-set) ---"
+          sudo -u runner dbus-run-session -- xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true
+          sudo -u runner dbus-run-session -- xfconf-query -c xsettings -p /Net/IconThemeName 2>/dev/null || true
           echo "::endgroup::"
 
           echo "::group::[CHECK] Resolution config (Xorg dummy)"
@@ -962,13 +982,14 @@ jobs:
 
           echo ""
           echo "=============================================================="
-          echo -e "${C_GREEN}  [OK] CHROME REMOTE DESKTOP IS RUNNING (CINNAMON)${C_NC}"
+          echo -e "${C_GREEN}  [OK] CHROME REMOTE DESKTOP IS RUNNING (XFCE BETA)${C_NC}"
           echo "=============================================================="
+          echo -e "  ${C_YELLOW}[INFO] BETA: runner image ubuntu-26.04 (public preview)${C_NC}"
           echo -e "  ${C_YELLOW}[INFO] Keep-alive 6 jam (sleep 21600). Jangan cancel workflow.${C_NC}"
           echo -e "  [INFO] Access : https://remotedesktop.google.com/access"
           echo -e "  [INFO] User   : runner"
           echo -e "  [INFO] Pass   : root"
-          echo -e "  [INFO] Desktop: Cinnamon"
+          echo -e "  [INFO] Desktop: XFCE (Beta)"
           echo "=============================================================="
 
           sleep 21600
