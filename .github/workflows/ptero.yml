@@ -426,9 +426,9 @@ jobs:
           $service = app(\Pterodactyl\Services\Api\KeyCreationService::class);
           $perm = [];
           foreach (['locations','nodes','servers','allocations','eggs','nests','users'] as $p) { $perm['r_'.$p] = 3; }
-          $key = $service->setKeyType(\Pterodactyl\Contracts\Repository\KeyRepository::TYPE_APPLICATION)
+          $key = $service->setKeyType(\Pterodactyl\Models\ApiKey::TYPE_APPLICATION)
               ->handle(['memo'=>'wings-setup','user_id'=>$u->id], $perm);
-          echo $key->identifier . $key->token;
+          echo $key->identifier . app(\Illuminate\Contracts\Encryption\Encrypter::class)->decrypt($key->token);
           PHP
           API_KEY=$(sudo -H -u www-data env XDG_CONFIG_HOME=/tmp/psysh php /var/www/pterodactyl/artisan tinker --execute="$(cat /tmp/tinker_key.php)")
           [ -n "$API_KEY" ] || { echo -e "${C_RED}[FAIL] API key kosong.${C_NC}"; exit 1; }
@@ -442,7 +442,7 @@ jobs:
           echo -e "${C_YELLOW}[INFO] Creating location...${C_NC}"
           curl -sf -o /dev/null -X POST http://127.0.0.1/api/application/locations \
             -H "$AUTH" -H 'Accept: application/json' -H 'Content-Type: application/json' \
-            -d '{"short_code":"idn-trial","description":"Temporary Trial Location (Indonesia)"}'
+            -d '{"short":"idn-trial","long":"Temporary Trial Location (Indonesia)"}'
 
           echo -e "${C_YELLOW}[INFO] Creating node (fqdn=wings tunnel)...${C_NC}"
           NODE_ID=$(curl -sf -X POST http://127.0.0.1/api/application/nodes \
